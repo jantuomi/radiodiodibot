@@ -4,7 +4,7 @@ import sys
 
 def get_token_from_argv():
     try:
-        return argv[1]
+        return sys.argv[1]
     except:
         print("Please provide the telegram bot token as a command line argument.")
         sys.exit()
