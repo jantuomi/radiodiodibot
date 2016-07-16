@@ -8,8 +8,8 @@ import logging
 
 
 class BotManager(object):
-    active_chat_ids = []
     shoutbox_api_url = "http://localhost:8080"
+    telegram_chat_id = "default_id"
 
     def __init__(self, token):
         self.token = token
@@ -51,23 +51,22 @@ class BotManager(object):
     def default_action(self, chat_id):
         self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")
 
+    def send_to_shoutbox(self, chat_id, text, user):
+        data = {"message":text, "user":user}
+        try:
+            requests.post(self.shoutbox_api_url, data)
+            logging.info("Sent message from {} to shoutbox.".format(user))
+        except:
+            logging.warning("Failed to send message from {} to shoutbox API!".format(user))
+
     # Placeholder action for testing commands
     def now_playing(self, chat_id):
 
         songs = ["Ace of Spades", "Mökkitie", "Alpha Russian XXL Night Mixtape", "teekkarihymni"]
         self.bot.sendMessage(chat_id, "Radiossa soi {}!".format(random.choice(songs)))
 
-    def start_transmission(self, chat_id):
-        self.active_chat_ids.append(chat_id)
-
-        self.bot.sendMessage(chat_id, "OK! Radiodiodibot välittää nyt viestejä huutelulaatikon ja tämän keskustelun välillä.")
-
-    def stop_transmission(self, chat_id):
-        if chat_id in self.active_chat_ids:
-            self.active_chat_ids.remove(chat_id)
-            self.bot.sendMessage(chat_id, "OK! Radiodiodibot lopettaa nyt viestien välittämisen.")
-        else:
-            self.bot.sendMessage(chat_id, "Radiodiodibot ei ole aktiivinen tässä keskustelussa.")
+    def not_supported(self, chat_id):
+        self.bot.sendMessage(chat_id, "Tätä toimintoa ei ole tuettu.")
 
     # Determine which action to take
     def parse_message(self, msg):
@@ -76,16 +75,16 @@ class BotManager(object):
         if "/nowplaying" in t:
             self.now_playing(chat_id)
         elif "/start" in t:
-            self.start_transmission(chat_id)
+            self.not_supported(chat_id)
         elif "/stop" in t:
-            self.stop_transmission(chat_id)
+            self.not_supported(chat_id)
         else:
-            self.default_action(chat_id)
+            user_name = msg["from"]["first_name"]
+            self.send_to_shoutbox(chat_id, t, user_name)
 
     # Start parsing the incoming message if it is a text message
     def handle(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        logging.info(content_type, chat_type, chat_id)
 
         if content_type == 'text':
             self.parse_message(msg)
