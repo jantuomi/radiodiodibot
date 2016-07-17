@@ -24,10 +24,12 @@ class MyHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-        body =  """{
-                \"message\":\"test message\"
-                \"user\":\"test user\"
-                }"""
+        body =  """[
+                    {
+                    \"text\":\"test message\",
+                    \"user\":\"test user\"
+                    }
+                ]"""
 
         self.wfile.write(body.encode())
 

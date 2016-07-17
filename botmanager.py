@@ -1,3 +1,4 @@
+import json
 import random
 import sys
 import requests
@@ -8,7 +9,7 @@ import logging
 
 
 class BotManager(object):
-    shoutbox_api_url = "http://localhost:8080"
+    shoutbox_api_url = "http://localhost:8000"
     telegram_chat_id = "default_id"
 
     def __init__(self, token):
@@ -44,12 +45,16 @@ class BotManager(object):
         try:
             r = requests.get(self.shoutbox_api_url)
             logging.info("Response from API OK.")
-            logging.info("Messages:")
-            logging.info(r.text)
+
         except:
             logging.warning("Failed to get response from API!")
             traceback.print_exc(2)
             return
+
+        content = json.loads(r.text)
+        logging.info("Messages:")
+        for msg in content:
+            logging.info("{}: {}".format(msg["user"], msg["text"]))
 
     def default_action(self, chat_id):
         self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")
