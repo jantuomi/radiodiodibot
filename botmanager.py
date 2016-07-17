@@ -44,8 +44,11 @@ class BotManager(object):
         try:
             r = requests.get(self.shoutbox_api_url)
             logging.info("Response from API OK.")
+            logging.info("Messages:")
+            logging.info(r.text)
         except:
             logging.warning("Failed to get response from API!")
+            traceback.print_exc(2)
             return
 
     def default_action(self, chat_id):
