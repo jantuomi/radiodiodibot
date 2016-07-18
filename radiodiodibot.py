@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys, argparse
+import sys
+import argparse
 import botmanager
 import logging
 
@@ -13,7 +14,20 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+# Get the bot token as an argument from the user
+parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
+parser.add_argument("telegram_bot_token", help="Telegram Bot API token")
+parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
+parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
+parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+args = parser.parse_args()
+
+if args.verbose:
+    logging_level = logging.INFO
+else:
+    logging_level = logging.WARNING
+
+logging.basicConfig(level=logging_level, format="%(asctime)s %(levelname)s %(message)s")
 
 # Try to import telepot
 # If not installed, inform user and fail gracefully
@@ -27,12 +41,6 @@ except:
 
 # Entry point
 def main():
-    # Get the bot token as an argument from the user
-    parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
-    parser.add_argument("telegram_bot_token", help="Telegram Bot API token")
-    parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
-    parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
-    args = parser.parse_args()
 
     token = args.telegram_bot_token
     shoutbox_api_url = args.shoutbox_api_url
@@ -40,10 +48,10 @@ def main():
 
     manager = botmanager.BotManager(token)
 
-    if (shoutbox_api_url != None):
+    if shoutbox_api_url is not None:
         manager.shoutbox_api_url = shoutbox_api_url
 
-    if telegram_chat_id != None:
+    if telegram_chat_id is not None:
         manager.telegram_chat_id = telegram_chat_id
 
     logging.info("Using Shoutbox API URL: {}".format(manager.shoutbox_api_url))
