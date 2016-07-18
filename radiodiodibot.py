@@ -20,6 +20,7 @@ parser.add_argument("telegram_bot_token", help="Telegram Bot API token")
 parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
 parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
 parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+parser.add_argument("-i", "--interval", help="Delay between API update calls in seconds", type=int, default=10)
 args = parser.parse_args()
 
 if args.verbose:
@@ -54,8 +55,11 @@ def main():
     if telegram_chat_id is not None:
         manager.telegram_chat_id = telegram_chat_id
 
+    manager.api_call_interval = args.interval
+
     logging.info("Using Shoutbox API URL: {}".format(manager.shoutbox_api_url))
     logging.info("Using Telegram Chat ID: {}".format(manager.telegram_chat_id))
+    logging.info("Using API call interval of {} seconds.".format(manager.api_call_interval))
 
     manager.start()
 

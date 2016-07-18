@@ -14,6 +14,7 @@ from shoutboxapicommunicator import Communicator
 class BotManager(object):
     shoutbox_api_url = "http://localhost:8000"
     telegram_chat_id = "default_id"
+    api_call_interval = 10
 
     def __init__(self, token):
         self.token = token
@@ -41,7 +42,7 @@ class BotManager(object):
         logging.info("Listening for messages...")
         while True:
             self.forward_to_telegram(Communicator.fetch(self.shoutbox_api_url))
-            time.sleep(10)
+            time.sleep(self.api_call_interval)
 
     def forward_to_telegram(self, messages):
         try:
