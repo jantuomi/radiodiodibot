@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import random
 import sys
@@ -6,6 +8,7 @@ import telepot
 import traceback
 import time
 import logging
+import shoutboxapicommunicator
 
 
 class BotManager(object):
@@ -14,6 +17,7 @@ class BotManager(object):
 
     def __init__(self, token):
         self.token = token
+        self.api_comm = shoutboxapicommunicator.Communicator()
 
         # Attempt to create a bot with telepot
         try:
@@ -26,8 +30,6 @@ class BotManager(object):
             sys.exit(1)
 
     def start(self):
-        self.started = True
-
         # Try fetching bot information from Telegram to check connection
         try:
             logging.info("Bot info: {}".format(self.bot.getMe()))
@@ -36,36 +38,14 @@ class BotManager(object):
             sys.exit(1)
 
         self.bot.message_loop(self.handle)
+
         logging.info("Listening for messages...")
         while True:
-            self.get_messages_from_shoutbox()
+            self.api_comm.fetch(self.shoutbox_api_url)
             time.sleep(10)
-
-    def get_messages_from_shoutbox(self):
-        try:
-            r = requests.get(self.shoutbox_api_url)
-            logging.info("Response from API OK.")
-
-        except:
-            logging.warning("Failed to get response from API!")
-            traceback.print_exc(2)
-            return
-
-        content = json.loads(r.text)
-        logging.info("Messages:")
-        for msg in content:
-            logging.info("{}: {}".format(msg["user"], msg["text"]))
 
     def default_action(self, chat_id):
         self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")
-
-    def send_to_shoutbox(self, chat_id, text, user):
-        data = {"message":text, "user":user}
-        try:
-            requests.post(self.shoutbox_api_url, data)
-            logging.info("Sent message from {} to shoutbox.".format(user))
-        except:
-            logging.warning("Failed to send message from {} to shoutbox API!".format(user))
 
     # Placeholder action for testing commands
     def now_playing(self, chat_id):
@@ -86,9 +66,9 @@ class BotManager(object):
             self.not_supported(chat_id)
         elif "/stop" in t:
             self.not_supported(chat_id)
-        else:
+        elif chat_id == self.telegram_chat_id:
             user_name = msg["from"]["first_name"]
-            self.send_to_shoutbox(chat_id, t, user_name)
+            self.api_comm.send(self.shoutbox_api_url, t, user_name)
 
     # Start parsing the incoming message if it is a text message
     def handle(self, msg):
