@@ -40,12 +40,17 @@ class BotManager(object):
 
         logging.info("Listening for messages...")
         while True:
-            # TODO send to telegram
-            messages = Communicator.fetch(self.shoutbox_api_url)
+            self.forward_to_telegram(Communicator.fetch(self.shoutbox_api_url))
+            time.sleep(10)
+
+    def forward_to_telegram(self, messages):
+        try:
             for message in messages:
                 self.bot.sendMessage(self.telegram_chat_id,
                                      "{}: {}".format(message["user"], message["text"]))
-            time.sleep(10)
+        except:
+            logging.warning("Failed to send message to Telegram!")
+            traceback.print_exc()
 
     def default_action(self, chat_id):
         self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")
