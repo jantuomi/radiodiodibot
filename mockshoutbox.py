@@ -42,7 +42,7 @@ class MyHandler(SimpleHTTPRequestHandler):
             # Begin the response
             self.send_response(200)
 
-        except KeyError:
+        except:
             traceback.print_exc()
             self.send_response(400)
 

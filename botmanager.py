@@ -41,7 +41,10 @@ class BotManager(object):
         logging.info("Listening for messages...")
         while True:
             # TODO send to telegram
-            Communicator.fetch(self.shoutbox_api_url)
+            messages = Communicator.fetch(self.shoutbox_api_url)
+            for message in messages:
+                self.bot.sendMessage(self.telegram_chat_id,
+                                     "{}: {}".format(message["user"], message["text"]))
             time.sleep(10)
 
     def default_action(self, chat_id):
@@ -68,7 +71,7 @@ class BotManager(object):
             self.not_supported(chat_id)
         elif str(chat_id) == self.telegram_chat_id.strip():
             user_name = msg["from"]["first_name"]
-            data = JSONFactory.make(t, user_name, msg["date"], "null")
+            data = JSONFactory.make_object(t, user_name, msg["date"], "null")
             logging.info("Created JSON packet:\n{}".format(data))
             Communicator.send(self.shoutbox_api_url, data)
         else:

@@ -3,7 +3,7 @@ import json
 
 class JSONFactory(object):
     @staticmethod
-    def make(text, user, timestamp, ip):
+    def make_object(text, user, timestamp, ip):
         message = json.dumps({
              "text": text,
              "user": user,
@@ -12,3 +12,7 @@ class JSONFactory(object):
         })
 
         return message
+
+    @staticmethod
+    def make_array(object_list):
+        return "[\n" + ",\n".join(object_list) + "\n]"
