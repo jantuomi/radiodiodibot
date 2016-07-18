@@ -10,11 +10,15 @@ import logging
 from jsonfactory import JSONFactory
 from shoutboxapicommunicator import Communicator
 
+class ObsoleteMessageException(Exception):
+    pass
 
 class BotManager(object):
     shoutbox_api_url = "http://localhost:8000"
     telegram_chat_id = "default_id"
     api_call_interval = 10
+
+    last_message_timestamps = {}
 
     def __init__(self, token):
         self.token = token
@@ -44,14 +48,31 @@ class BotManager(object):
             self.forward_to_telegram(Communicator.fetch(self.shoutbox_api_url))
             time.sleep(self.api_call_interval)
 
+            new_message_dict = {}
+
+            for msg_id in self.last_message_timestamps:
+
+                # if the message is older than 2 * call interval,
+                # pop it from the buffer because there is no way
+                # it can be a duplicate anymore
+                timestamp = round(float(self.last_message_timestamps[msg_id]))
+                if not round(time.time()) - timestamp < 2 * self.api_call_interval:
+                    new_message_dict[msg_id] = self.last_message_timestamps[msg_id]
+                else:
+                    logging.info("Popped message from buffer.")
+
+            self.last_message_timestamps = new_message_dict
+
     def forward_to_telegram(self, messages):
         try:
             for message in messages:
-                self.bot.sendMessage(self.telegram_chat_id,
-                                     "{}: {}".format(message["user"], message["text"]))
+                if message["id"] not in self.last_message_timestamps:
+                    self.bot.sendMessage(self.telegram_chat_id,
+                                         "{}: {}".format(message["user"], message["text"]))
+                    self.last_message_timestamps[message["id"]] = message["timestamp"]
+
         except:
             logging.warning("Failed to send message to Telegram!")
-            traceback.print_exc()
 
     def default_action(self, chat_id):
         self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")

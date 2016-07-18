@@ -6,6 +6,8 @@ import traceback
 from http.server import SimpleHTTPRequestHandler
 import json
 
+import time
+
 '''
 Mock HTTP server to test
 shoutbox api requests.
@@ -23,13 +25,13 @@ class MyHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-        body =  """[
-                    {
-                    \"text\":\"test message\",
-                    \"user\":\"test user\"
-                    }
-                ]"""
-
+        body = json.dumps([{
+            "user": "test user",
+            "text": "test message",
+            "timestamp": str(time.time()),
+            "id": time.time(),
+            "ip": "1.2.3.4"
+        }])
         self.wfile.write(body.encode())
 
     def do_POST(self):
