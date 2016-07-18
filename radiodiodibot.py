@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import configparser
 import sys
 import argparse
 import botmanager
@@ -14,9 +14,14 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
+# Read configs
+CONFIG_FILE = "bot.config"
+config = configparser.ConfigParser()
+config.read(CONFIG_FILE)
+
 # Get the bot token as an argument from the user
 parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
-parser.add_argument("telegram_bot_token", help="Telegram Bot API token")
+parser.add_argument("-t", "--token", help="Telegram Bot API token")
 parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
 parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
 parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
@@ -39,28 +44,39 @@ except:
     print("Please install telepot before using radiodiodibot.")
     sys.exit(1)
 
-
 # Entry point
 def main():
+    # Get default parameter values from the config file
+    telegram_bot_token = config["GENERAL"]["TelegramBotToken"]
+    shoutbox_api_url = config["GENERAL"]["ShoutboxApiUrl"]
+    telegram_chat_id = config["GENERAL"]["TelegramChatID"]
+    api_call_interval = config["GENERAL"]["ApiCallInterval"]
 
-    token = args.telegram_bot_token
-    shoutbox_api_url = args.shoutbox_api_url
-    telegram_chat_id = args.telegram_chat_id
+    # If the user has specified the parameters as command line
+    # arguments, use them to override the config values
+    if args.token is not None:
+        telegram_bot_token = args.token
 
-    manager = botmanager.BotManager(token)
+    if args.shoutbox_api_url is not None:
+        shoutbox_api_url = args.shoutbox_api_url
 
-    if shoutbox_api_url is not None:
-        manager.shoutbox_api_url = shoutbox_api_url
+    if args.telegram_chat_id is not None:
+        telegram_chat_id = args.telegram_chat_id
 
-    if telegram_chat_id is not None:
-        manager.telegram_chat_id = telegram_chat_id
+    if args.interval is not None:
+        api_call_interval = args.interval
 
-    manager.api_call_interval = args.interval
+    # Store the final values in a manager instance
+    manager = botmanager.BotManager(telegram_bot_token)
+    manager.shoutbox_api_url = shoutbox_api_url
+    manager.telegram_chat_id = telegram_chat_id
+    manager.api_call_interval = api_call_interval
 
     logging.info("Using Shoutbox API URL: {}".format(manager.shoutbox_api_url))
     logging.info("Using Telegram Chat ID: {}".format(manager.telegram_chat_id))
     logging.info("Using API call interval of {} seconds.".format(manager.api_call_interval))
 
+    # Start listening
     manager.start()
 
 
