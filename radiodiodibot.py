@@ -44,8 +44,11 @@ except:
     print("Please install telepot before using radiodiodibot.")
     sys.exit(1)
 
+
 # Entry point
 def main():
+    print("=== Radiodiodibot ===")
+    print("Press CTRL-C to exit.")
     # Get default parameter values from the config file
     telegram_bot_token = config["GENERAL"]["TelegramBotToken"]
     shoutbox_api_url = config["GENERAL"]["ShoutboxApiUrl"]
