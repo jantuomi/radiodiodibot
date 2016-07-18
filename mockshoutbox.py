@@ -2,14 +2,13 @@
 
 import sys
 import http.server
+import traceback
 from http.server import SimpleHTTPRequestHandler
+import json
 
 '''
 Mock HTTP server to test
 shoutbox api requests.
-
-Copyright: linuxjournal.com
-Source: http://www.linuxjournal.com/content/tech-tip-really-simple-http-server-python
 '''
 
 class MyHandler(SimpleHTTPRequestHandler):
@@ -33,9 +32,27 @@ class MyHandler(SimpleHTTPRequestHandler):
 
         self.wfile.write(body.encode())
 
+    def do_POST(self):
+        content_len = int(self.headers.get('Content-Length'))
+        post_data = self.rfile.read(content_len)
+
+        try:
+            message = json.loads(post_data.decode('utf-8'))
+            print("{}: {}".format(message["user"], message["text"]))
+            # Begin the response
+            self.send_response(200)
+
+        except KeyError:
+            traceback.print_exc()
+            self.send_response(400)
+
+        self.end_headers()
+
+        return
+
 HandlerClass = MyHandler
-ServerClass  = http.server.HTTPServer
-Protocol     = "HTTP/1.0"
+ServerClass = http.server.HTTPServer
+Protocol = "HTTP/1.0"
 
 if sys.argv[1:]:
     port = int(sys.argv[1])

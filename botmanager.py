@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import json
 import random
 import sys
-import requests
 import telepot
 import traceback
 import time
 import logging
-import shoutboxapicommunicator
+
+from jsonfactory import JSONFactory
+from shoutboxapicommunicator import Communicator
 
 
 class BotManager(object):
@@ -17,7 +17,6 @@ class BotManager(object):
 
     def __init__(self, token):
         self.token = token
-        self.api_comm = shoutboxapicommunicator.Communicator()
 
         # Attempt to create a bot with telepot
         try:
@@ -41,7 +40,8 @@ class BotManager(object):
 
         logging.info("Listening for messages...")
         while True:
-            self.api_comm.fetch(self.shoutbox_api_url)
+            # TODO send to telegram
+            Communicator.fetch(self.shoutbox_api_url)
             time.sleep(10)
 
     def default_action(self, chat_id):
@@ -66,9 +66,13 @@ class BotManager(object):
             self.not_supported(chat_id)
         elif "/stop" in t:
             self.not_supported(chat_id)
-        elif chat_id == self.telegram_chat_id:
+        elif str(chat_id) == self.telegram_chat_id.strip():
             user_name = msg["from"]["first_name"]
-            self.api_comm.send(self.shoutbox_api_url, t, user_name)
+            data = JSONFactory.make(t, user_name, msg["date"], "null")
+            logging.info("Created JSON packet:\n{}".format(data))
+            Communicator.send(self.shoutbox_api_url, data)
+        else:
+            logging.info("Got non-forwarded message from chat_id: {}".format(chat_id))
 
     # Start parsing the incoming message if it is a text message
     def handle(self, msg):

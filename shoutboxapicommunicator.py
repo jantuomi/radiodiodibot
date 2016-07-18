@@ -6,7 +6,8 @@ import logging
 
 class Communicator(object):
 
-    def fetch(self, url):
+    @staticmethod
+    def fetch(url):
         try:
             r = requests.get(url)
             logging.info("Response from API OK.")
@@ -22,10 +23,11 @@ class Communicator(object):
 
         return content
 
-    def send(self, url, text, user):
-        data = {"text": text, "user": user}
+    @staticmethod
+    def send(url, data):
         try:
             requests.post(url, data)
+            user = json.loads(data)["user"]
             logging.info("Sent message from {} to shoutbox.".format(user))
         except:
-            logging.warning("Failed to send message from {} to shoutbox API!".format(user))
+            logging.warning("Failed to send message to shoutbox API!")
