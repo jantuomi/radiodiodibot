@@ -1,7 +1,9 @@
 import json
-import requests
 import logging
-from basecommunicator import BaseCommunicator
+
+import requests
+
+from project.basecommunicator import BaseCommunicator
 
 
 class ShoutboxCommunicator(BaseCommunicator):

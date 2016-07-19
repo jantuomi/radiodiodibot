@@ -1,15 +1,16 @@
-#!/usr/bin/env python
-import configparser
-import sys
+#!/usr/bin/env python3
 import argparse
-import botmanager
+import configparser
 import logging
 import signal
+import sys
+
+from project import botmanager
 
 
 def sigint_handler(signal, frame):
     """Exit gracefully when receiving an interrupt signal"""
-    print("Exiting radiodiodibot...")
+    print("Exiting src...")
     sys.exit(0)
 
 signal.signal(signal.SIGINT, sigint_handler)
@@ -23,8 +24,8 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-# Read configs, unsuccessful reads are silently
-# ignored
+# Read configs, unsuccessful reads are
+# silently ignored
 CONFIG_FILE = "bot.config"
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
@@ -51,8 +52,8 @@ logging.basicConfig(level=logging_level, format="%(asctime)s %(levelname)s %(mes
 try:
     import telepot
 except:
-    print("radiodiodibot needs the telepot module to communicate with Telegram.")
-    print("Please install telepot before using radiodiodibot.")
+    print("src needs the telepot module to communicate with Telegram.")
+    print("Please install telepot before using src.")
     sys.exit(1)
 
 

@@ -1,9 +1,9 @@
 import logging
-
 import sys
+
 import telepot
 
-from basecommunicator import BaseCommunicator
+from project.basecommunicator import BaseCommunicator
 
 
 class TelegramCommunicator(BaseCommunicator):

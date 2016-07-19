@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import random
 import sys
-import telepot
-import traceback
 import time
-import logging
+import traceback
 
-from jsonfactory import JSONFactory
-from shoutboxapicommunicator import ShoutboxCommunicator
-from telegramapicommunicator import TelegramCommunicator
+import telepot
+
+from project.jsonfactory import JSONFactory
+from project.shoutboxapicommunicator import ShoutboxCommunicator
+from project.telegramapicommunicator import TelegramCommunicator
+
 
 class BotManager(object):
     """Manager class for the process"""
@@ -32,7 +34,7 @@ class BotManager(object):
             logging.info("Bot succesfully created.")
         except:
             traceback.print_exc()
-            logging.error("Error creating bot listener. radiodiodibot will now exit...")
+            logging.error("Error creating bot listener. src will now exit...")
             sys.exit(1)
 
     def set_parameters(self, shoutbox_api_url, telegram_chat_id, api_call_interval):
