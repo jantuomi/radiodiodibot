@@ -18,11 +18,11 @@ ShoutboxApiUrl=<YOUR_API_URL>
 TelegramChatID=<TELEGRAM_CHAT_ID>
 ApiCallInterval=<UPDATE_INTERVAL_IN_SECONDS>
 ```
-And then just run it like so: `python radiodiodibot.py`
+And then just run it like so: `./radiodiodibot` or `python radiodiodibot`
 
 2) Or just pass the information as command line arguments:
 ```
-python radiodiodibot.py -t <YOUR_BOT_TOKEN> -C <TELEGRAM_CHAT_ID> -U <YOUR_API_URL> -i <UPDATE_INTERVAL_IN_SECONDS>
+./radiodiodibot -t <YOUR_BOT_TOKEN> -C <TELEGRAM_CHAT_ID> -U <YOUR_API_URL> -i <UPDATE_INTERVAL_IN_SECONDS>
 ```
 ### Specification
 Radiodiodibot communicates with the shoutbox with the following json format:
