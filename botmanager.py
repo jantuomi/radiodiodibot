@@ -8,104 +8,125 @@ import time
 import logging
 
 from jsonfactory import JSONFactory
-from shoutboxapicommunicator import Communicator
-
-class ObsoleteMessageException(Exception):
-    pass
+from shoutboxapicommunicator import ShoutboxCommunicator
+from telegramapicommunicator import TelegramCommunicator
 
 class BotManager(object):
-    shoutbox_api_url = "http://localhost:8000"
-    telegram_chat_id = "default_id"
-    api_call_interval = 10
+    """Manager class for the process"""
 
+    # Make a dict of ( message id : timestamp ) pairs to
+    # keep track of sent messages.
+    # Messages older than 2 * update interval will be forgotten.
     last_message_timestamps = {}
 
     def __init__(self, token):
-        self.token = token
+        """
+        Attempt to create a bot with telepot
 
-        # Attempt to create a bot with telepot
+        If not possible, crash gracefully
+        """
+        TelegramCommunicator.token = token
         try:
             logging.info("Creating bot listener with token {}...".format(token))
-            self.bot = telepot.Bot(token)
+            TelegramCommunicator.spawn_bot(token)
             logging.info("Bot succesfully created.")
         except:
             traceback.print_exc()
             logging.error("Error creating bot listener. radiodiodibot will now exit...")
             sys.exit(1)
 
+    def set_parameters(self, shoutbox_api_url, telegram_chat_id, api_call_interval):
+        """Store parameters in the manager instance"""
+        ShoutboxCommunicator.url = shoutbox_api_url
+        TelegramCommunicator.chat_id = telegram_chat_id
+        ShoutboxCommunicator.interval = api_call_interval
+
     def start(self):
-        # Try fetching bot information from Telegram to check connection
-        try:
-            logging.info("Bot info: {}".format(self.bot.getMe()))
-        except:
-            logging.error("Could not fetch bot info. Check your token and connectivity to Telegram!")
-            sys.exit(1)
+        """Try fetching bot information from Telegram to check connection"""
+        TelegramCommunicator.start_listening(self.handle)
 
-        self.bot.message_loop(self.handle)
-
-        logging.info("Listening for messages...")
         while True:
-            self.forward_to_telegram(Communicator.fetch(self.shoutbox_api_url))
-            time.sleep(self.api_call_interval)
+            # Forward all new messages to the Telegram chat
+            # and add them to the message dict
+            self.forward_to_telegram(ShoutboxCommunicator.fetch())
 
-            new_message_dict = {}
+            # Wait for the update interval
+            time.sleep(ShoutboxCommunicator.interval)
 
-            for msg_id in self.last_message_timestamps:
+            # Remove obsolete messages from the dict to prevent it
+            # from bloating
+            self.clean_up_message_dict()
 
-                # if the message is older than 2 * call interval,
-                # pop it from the buffer because there is no way
-                # it can be a duplicate anymore
-                timestamp = round(float(self.last_message_timestamps[msg_id]))
-                if not round(time.time()) - timestamp < 2 * self.api_call_interval:
-                    new_message_dict[msg_id] = self.last_message_timestamps[msg_id]
-                else:
-                    logging.info("Popped message from buffer.")
+    def clean_up_message_dict(self):
+        """Purge all obsolete messages from the message dict"""
+        new_message_dict = {}
+        for msg_id in self.last_message_timestamps:
 
-            self.last_message_timestamps = new_message_dict
+            # if the message is older than 2 * call interval,
+            # pop it from the buffer because there is no way
+            # it can be a duplicate anymore
+            timestamp = round(float(self.last_message_timestamps[msg_id]))
+            if not round(time.time()) - timestamp < 2 * ShoutboxCommunicator.interval:
+                new_message_dict[msg_id] = self.last_message_timestamps[msg_id]
+            else:
+                logging.info("Popped message from buffer.")
+        self.last_message_timestamps = new_message_dict
 
     def forward_to_telegram(self, messages):
+        """Send all messages in the messages list to the Telegram chat"""
         try:
             for message in messages:
+                # Do not send messages that have already been sent
+                # This check is in place because of possible artifacts in API calls
                 if message["id"] not in self.last_message_timestamps:
-                    self.bot.sendMessage(self.telegram_chat_id,
-                                         "{}: {}".format(message["user"], message["text"]))
+                    TelegramCommunicator.send(message)
                     self.last_message_timestamps[message["id"]] = message["timestamp"]
 
         except:
             logging.warning("Failed to send message to Telegram!")
 
-    def default_action(self, chat_id):
-        self.bot.sendMessage(chat_id, "Radio palaa keväällä 2017!")
+    songs = ["Ace of Spades", "Mökkitie", "Alpha Russian XXL Night Mixtape", "teekkarihymni"]
 
-    # Placeholder action for testing commands
-    def now_playing(self, chat_id):
+    def action_now_playing(self, msg):
+        """Placeholder action for testing commands"""
+        TelegramCommunicator.send_raw("Radiossa soi {}!".format(random.choice(BotManager.songs)))
 
-        songs = ["Ace of Spades", "Mökkitie", "Alpha Russian XXL Night Mixtape", "teekkarihymni"]
-        self.bot.sendMessage(chat_id, "Radiossa soi {}!".format(random.choice(songs)))
+    def action_not_supported(self, msg):
+        """Notify the user that the given command is not supported"""
+        TelegramCommunicator.send_raw("Tätä toimintoa ei ole tuettu.")
 
-    def not_supported(self, chat_id):
-        self.bot.sendMessage(chat_id, "Tätä toimintoa ei ole tuettu.")
-
-    # Determine which action to take
     def parse_message(self, msg):
+        """Determine which action to take for an incoming Telegram text message"""
         t = msg["text"]
         content_type, chat_type, chat_id = telepot.glance(msg)
         if "/nowplaying" in t:
-            self.now_playing(chat_id)
+            self.action_now_playing(msg)
         elif "/start" in t:
-            self.not_supported(chat_id)
+            self.action_not_supported(msg)
         elif "/stop" in t:
-            self.not_supported(chat_id)
-        elif str(chat_id) == self.telegram_chat_id.strip():
-            user_name = msg["from"]["first_name"]
-            data = JSONFactory.make_object(t, user_name, msg["date"], "null")
-            logging.info("Created JSON packet:\n{}".format(data))
-            Communicator.send(self.shoutbox_api_url, data)
+            self.action_not_supported(msg)
+        elif str(chat_id) == TelegramCommunicator.chat_id.strip():
+            self.action_send_to_shoutbox(msg)
         else:
             logging.info("Got non-forwarded message from chat_id: {}".format(chat_id))
 
-    # Start parsing the incoming message if it is a text message
+    def action_send_to_shoutbox(self, msg):
+        """Forward a Telegram message to shoutbox"""
+        try:
+            user_name = msg["from"]["first_name"]
+            text = msg["text"]
+            date = msg["date"]
+        except KeyError:
+            logging.warning("Malformed message from Telegram! Details:\n{}".format(msg))
+            logging.warning("Skipped sending message to shoutbox.")
+            return
+
+        data = JSONFactory.make_object(text, user_name, date, "null")
+        logging.info("Created JSON packet:\n{}".format(data))
+        ShoutboxCommunicator.send(data)
+
     def handle(self, msg):
+        """Start parsing the incoming message if it is a text message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type == 'text':

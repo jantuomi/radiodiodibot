@@ -1,15 +1,20 @@
 import json
-
 import requests
 import logging
+from basecommunicator import BaseCommunicator
 
 
-class Communicator(object):
+class ShoutboxCommunicator(BaseCommunicator):
+    """Class for communication with the shoutbox API"""
+
+    url = "http://localhost:8000"
+    interval = 10
 
     @staticmethod
-    def fetch(url):
+    def fetch():
+        """Get and return a list of new messages from the API"""
         try:
-            r = requests.get(url)
+            r = requests.get(ShoutboxCommunicator.url)
             logging.info("Response from API OK.")
 
         except:
@@ -24,9 +29,10 @@ class Communicator(object):
         return content
 
     @staticmethod
-    def send(url, data):
+    def send(data):
+        """Send a JSON message to the API"""
         try:
-            requests.post(url, data)
+            requests.post(ShoutboxCommunicator.url, data)
             user = json.loads(data)["user"]
             logging.info("Sent message from {} to shoutbox.".format(user))
         except:

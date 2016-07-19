@@ -8,40 +8,49 @@ import json
 
 import time
 
-'''
-Mock HTTP server to test
-shoutbox api requests.
-'''
 
 class MyHandler(SimpleHTTPRequestHandler):
+    """
+    Mock shoutbox HTTP server to test
+    shoutbox API requests.
+    """
     def do_HEAD(self):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
     def do_GET(self):
-        """Respond to a GET request."""
+        """
+        Respond to a GET with a JSON array containing one object
+        that contains the following:
+
+        test user: test message
+        """
+
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
+        timestamp = str(round(time.time()))
         body = json.dumps([{
             "user": "test user",
             "text": "test message",
-            "timestamp": str(time.time()),
-            "id": time.time(),
+            "timestamp": timestamp,
+            "id": timestamp,
             "ip": "1.2.3.4"
         }])
         self.wfile.write(body.encode())
 
     def do_POST(self):
+        """
+        Respond to a POST by printing the message contents to console
+        """
         content_len = int(self.headers.get('Content-Length'))
         post_data = self.rfile.read(content_len)
 
         try:
             message = json.loads(post_data.decode('utf-8'))
             print("{}: {}".format(message["user"], message["text"]))
-            # Begin the response
             self.send_response(200)
 
         except:

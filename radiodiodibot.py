@@ -4,6 +4,15 @@ import sys
 import argparse
 import botmanager
 import logging
+import signal
+
+
+def sigint_handler(signal, frame):
+    """Exit gracefully when receiving an interrupt signal"""
+    print("Exiting radiodiodibot...")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, sigint_handler)
 
 try:  # Python 2.7+
     from logging import NullHandler
@@ -14,7 +23,8 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-# Read configs
+# Read configs, unsuccessful reads are silently
+# ignored
 CONFIG_FILE = "bot.config"
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
@@ -28,6 +38,7 @@ parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true
 parser.add_argument("-i", "--interval", help="Delay between API update calls in seconds", type=int, default=10)
 args = parser.parse_args()
 
+# Show verbose output with the -v option
 if args.verbose:
     logging_level = logging.INFO
 else:
@@ -71,13 +82,11 @@ def main():
 
     # Store the final values in a manager instance
     manager = botmanager.BotManager(telegram_bot_token)
-    manager.shoutbox_api_url = shoutbox_api_url
-    manager.telegram_chat_id = telegram_chat_id
-    manager.api_call_interval = api_call_interval
+    manager.set_parameters(shoutbox_api_url, telegram_chat_id, api_call_interval)
 
-    logging.info("Using Shoutbox API URL: {}".format(manager.shoutbox_api_url))
-    logging.info("Using Telegram Chat ID: {}".format(manager.telegram_chat_id))
-    logging.info("Using API call interval of {} seconds.".format(manager.api_call_interval))
+    logging.info("Using Shoutbox API URL: {}".format(shoutbox_api_url))
+    logging.info("Using Telegram Chat ID: {}".format(telegram_chat_id))
+    logging.info("Using API call interval of {} seconds.".format(api_call_interval))
 
     # Start listening
     manager.start()
