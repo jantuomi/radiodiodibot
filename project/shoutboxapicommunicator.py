@@ -13,17 +13,29 @@ class ShoutboxCommunicator(BaseCommunicator):
     interval = 10
 
     @staticmethod
+    def get_url():
+        return "{}/api/last?seconds={}".format(ShoutboxCommunicator.url, ShoutboxCommunicator.interval)
+
+    @staticmethod
+    def post_url():
+        return ShoutboxCommunicator.url + "/api/post"
+
+    @staticmethod
     def fetch():
         """Get and return a list of new messages from the API"""
         try:
-            r = requests.get(ShoutboxCommunicator.url)
+            r = requests.get(ShoutboxCommunicator.get_url())
             logging.info("Response from API OK.")
 
         except:
-            logging.warning("Failed to get response from API!")
+            logging.warning("Failed to get response from API! ({})".format(ShoutboxCommunicator.get_url()))
             return
 
-        content = json.loads(r.text)
+        try:
+            content = json.loads(r.text)
+        except:
+            logging.warning("Could not parse JSON from request!")
+            return
 
         if len(content) > 0:
             logging.info("Messages from shoutbox:")
@@ -34,10 +46,14 @@ class ShoutboxCommunicator(BaseCommunicator):
 
     @staticmethod
     def send(data):
-        """Send a JSON message to the API"""
+        """Send a message to the API"""
+        post_params = "?user={}&text={}&id={}&ip={}&timestamp={}".format(
+            data["user"], data["text"], data["id"], data["ip"], data["timestamp"]
+        )
+
         try:
-            requests.post(ShoutboxCommunicator.url, data)
-            user = json.loads(data)["user"]
+            requests.post(ShoutboxCommunicator.post_url() + post_params, "")
+            user = data["user"]
             logging.info("Sent message from {} to shoutbox.".format(user))
         except:
             logging.warning("Failed to send message to shoutbox API!")

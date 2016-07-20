@@ -27,6 +27,7 @@ class BotManager(object):
         If not possible, crash gracefully
         """
         TelegramCommunicator.token = token
+        self.running_message_id = 1
         try:
             logging.info("Creating bot listener with token {}...".format(token))
             TelegramCommunicator.spawn_bot(token)
@@ -103,13 +104,22 @@ class BotManager(object):
             logging.warning("Skipped sending message to shoutbox.")
             return
 
-        data = JSONFactory.make_object(text, user_name, date, "null")
-        logging.info("Created JSON packet:\n{}".format(data))
-        ShoutboxCommunicator.send(data)
+        message = {
+            "user": user_name,
+            "text": text,
+            "id": self.running_message_id,
+            "ip": "null",
+            "timestamp": date
+        }
+        self.running_message_id += 1
+        ShoutboxCommunicator.send(message)
 
     def handle(self, msg):
         """Start parsing the incoming message if it is a text message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type == 'text':
+            logging.info("Got text message.")
             self.parse_message(msg)
+        else:
+            logging.info("Got non-text message.")
