@@ -24,9 +24,11 @@ class ShoutboxCommunicator(BaseCommunicator):
             return
 
         content = json.loads(r.text)
-        logging.info("Messages:")
-        for msg in content:
-            logging.info("{}: {}".format(msg["user"], msg["text"]))
+
+        if len(content) > 0:
+            logging.info("Messages from shoutbox:")
+            for msg in content:
+                logging.info("{}: {}".format(msg["user"], msg["text"]))
 
         return content
 

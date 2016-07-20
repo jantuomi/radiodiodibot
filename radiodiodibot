@@ -65,7 +65,7 @@ def main():
     telegram_bot_token = config["GENERAL"]["TelegramBotToken"]
     shoutbox_api_url = config["GENERAL"]["ShoutboxApiUrl"]
     telegram_chat_id = config["GENERAL"]["TelegramChatID"]
-    api_call_interval = config["GENERAL"]["ApiCallInterval"]
+    api_call_interval = int(config["GENERAL"]["ApiCallInterval"])
 
     # If the user has specified the parameters as command line
     # arguments, use them to override the config values

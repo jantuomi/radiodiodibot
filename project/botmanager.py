@@ -6,7 +6,7 @@ import sys
 import time
 import traceback
 import telepot
-from dateutil.parser import parse
+
 from project.jsonfactory import JSONFactory
 from project.shoutboxapicommunicator import ShoutboxCommunicator
 from project.telegramapicommunicator import TelegramCommunicator
@@ -18,7 +18,7 @@ class BotManager(object):
     # Make a dict of ( message id : timestamp ) pairs to
     # keep track of sent messages.
     # Messages older than 2 * update interval will be forgotten.
-    last_message_timestamps = {}
+    last_message_id = ""
 
     def __init__(self, token):
         """
@@ -54,42 +54,15 @@ class BotManager(object):
             # Wait for the update interval
             time.sleep(ShoutboxCommunicator.interval)
 
-            # Remove obsolete messages from the dict to prevent it
-            # from bloating
-            self.clean_up_message_dict()
-
-    def clean_up_message_dict(self):
-        """Purge all obsolete messages from the message dict"""
-        new_message_dict = {}
-        for msg_id in self.last_message_timestamps:
-
-            # if the message is older than 2 * call interval,
-            # pop it from the buffer because there is no way
-            # it can be a duplicate anymore
-            str_stamp = self.last_message_timestamps[msg_id]
-            try:
-                timestamp = round(float(str_stamp))
-            except ValueError:
-                timestamp_st = parse(timestamp)
-                timestamp = int(time.mktime(timestamp_st.timetuple()))
-
-            print("Timestamp: {}, now: {}".format(round(time.time()), timestamp))
-
-            if not abs(round(time.time()) - timestamp) < 2 * ShoutboxCommunicator.interval:
-                new_message_dict[msg_id] = self.last_message_timestamps[msg_id]
-            else:
-                logging.info("Popped message from buffer.")
-        self.last_message_timestamps = new_message_dict
-
     def forward_to_telegram(self, messages):
         """Send all messages in the messages list to the Telegram chat"""
         try:
             for message in messages:
                 # Do not send messages that have already been sent
                 # This check is in place because of possible artifacts in API calls
-                if message["id"] not in self.last_message_timestamps:
+                if message["id"] != self.last_message_id:
                     TelegramCommunicator.send(message)
-                    self.last_message_timestamps[message["id"]] = message["timestamp"]
+                    self.last_message_id = message["id"]
 
         except:
             logging.warning("Failed to send message to Telegram!")
