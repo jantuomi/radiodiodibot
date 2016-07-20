@@ -5,9 +5,8 @@ import random
 import sys
 import time
 import traceback
-
 import telepot
-
+from dateutil.parser import parse
 from project.jsonfactory import JSONFactory
 from project.shoutboxapicommunicator import ShoutboxCommunicator
 from project.telegramapicommunicator import TelegramCommunicator
@@ -67,8 +66,16 @@ class BotManager(object):
             # if the message is older than 2 * call interval,
             # pop it from the buffer because there is no way
             # it can be a duplicate anymore
-            timestamp = round(float(self.last_message_timestamps[msg_id]))
-            if not round(time.time()) - timestamp < 2 * ShoutboxCommunicator.interval:
+            str_stamp = self.last_message_timestamps[msg_id]
+            try:
+                timestamp = round(float(str_stamp))
+            except ValueError:
+                timestamp_st = parse(timestamp)
+                timestamp = int(time.mktime(timestamp_st.timetuple()))
+
+            print("Timestamp: {}, now: {}".format(round(time.time()), timestamp))
+
+            if not abs(round(time.time()) - timestamp) < 2 * ShoutboxCommunicator.interval:
                 new_message_dict[msg_id] = self.last_message_timestamps[msg_id]
             else:
                 logging.info("Popped message from buffer.")
