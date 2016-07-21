@@ -37,11 +37,12 @@ class BotManager(object):
             logging.error("Error creating bot listener. src will now exit...")
             sys.exit(1)
 
-    def set_parameters(self, shoutbox_api_url, telegram_chat_id, api_call_interval):
+    def set_parameters(self, shoutbox_api_url, telegram_chat_id, api_call_interval, api_auth_token):
         """Store parameters in the manager instance"""
         ShoutboxCommunicator.url = shoutbox_api_url
         TelegramCommunicator.chat_id = telegram_chat_id
         ShoutboxCommunicator.interval = api_call_interval
+        ShoutboxCommunicator.token = api_auth_token
 
     def start(self):
         """Try fetching bot information from Telegram to check connection"""

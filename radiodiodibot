@@ -66,6 +66,7 @@ def main():
     shoutbox_api_url = config["GENERAL"]["ShoutboxApiUrl"]
     telegram_chat_id = config["GENERAL"]["TelegramChatID"]
     api_call_interval = int(config["GENERAL"]["ApiCallInterval"])
+    api_auth_token = config["GENERAL"]["ApiAuthToken"]
 
     # If the user has specified the parameters as command line
     # arguments, use them to override the config values
@@ -83,7 +84,7 @@ def main():
 
     # Store the final values in a manager instance
     manager = botmanager.BotManager(telegram_bot_token)
-    manager.set_parameters(shoutbox_api_url, telegram_chat_id, api_call_interval)
+    manager.set_parameters(shoutbox_api_url, telegram_chat_id, api_call_interval, api_auth_token)
 
     logging.info("Using Shoutbox API URL: {}".format(shoutbox_api_url))
     logging.info("Using Telegram Chat ID: {}".format(telegram_chat_id))
