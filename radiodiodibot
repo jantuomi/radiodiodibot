@@ -12,6 +12,8 @@ from project import uptimeservice
 
 def sigint_handler(signal, frame):
     """Exit gracefully when receiving an interrupt signal"""
+    logging.info("Stopping uptime services (if any)...")
+    uptimeservice.UptimeService.stop_services()
     print("Exiting radiodiodibot...")
     sys.exit(0)
 
