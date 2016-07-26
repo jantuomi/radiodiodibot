@@ -4,13 +4,15 @@ import configparser
 import logging
 import signal
 import sys
+import threading
 
 from project import botmanager
+from project import uptimeservice
 
 
 def sigint_handler(signal, frame):
     """Exit gracefully when receiving an interrupt signal"""
-    print("Exiting src...")
+    print("Exiting radiodiodibot...")
     sys.exit(0)
 
 signal.signal(signal.SIGINT, sigint_handler)
@@ -56,6 +58,10 @@ except:
     print("Please install telepot before using src.")
     sys.exit(1)
 
+def run_uptime(port):
+    logging.info("Setting up uptime service...")
+    uptime_server = uptimeservice.UptimeService(int(port))
+    uptime_server.start()
 
 # Entry point
 def main():
@@ -67,6 +73,7 @@ def main():
     telegram_chat_id = config["GENERAL"]["TelegramChatID"]
     api_call_interval = int(config["GENERAL"]["ApiCallInterval"])
     api_auth_token = config["GENERAL"]["ApiAuthToken"]
+    uptime_port = config["UPTIME"]["Port"]
 
     # If the user has specified the parameters as command line
     # arguments, use them to override the config values
@@ -89,6 +96,10 @@ def main():
     logging.info("Using Shoutbox API URL: {}".format(shoutbox_api_url))
     logging.info("Using Telegram Chat ID: {}".format(telegram_chat_id))
     logging.info("Using API call interval of {} seconds.".format(api_call_interval))
+
+    # Start uptime server if user has provided a port to bind
+    if uptime_port is not None:
+        run_uptime(uptime_port)
 
     # Start listening
     manager.start()
