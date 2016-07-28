@@ -37,12 +37,10 @@ class BotLauncher(object):
         self.config.read(BotLauncher.CONFIG_FILE)
 
         # Get the bot token as an argument from the user
-        parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
-        parser.add_argument("-t", "--token", help="Telegram Bot API token")
-        parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
-        parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
+        parser = argparse.ArgumentParser(
+            description="""Telegram bot for the Radiodiodi Student Radio broadcast.
+                           Please configure the bot with 'bot.config' before launching.""")
         parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
-        parser.add_argument("-i", "--interval", help="Delay between API update calls in seconds", type=int)
         self.args = parser.parse_args()
 
         # Show verbose output with the -v option
@@ -68,8 +66,8 @@ class BotLauncher(object):
         try:
             import telepot
         except:
-            print("src needs the telepot module to communicate with Telegram.")
-            print("Please install telepot before using src.")
+            print("radiodiodibot needs the telepot module to communicate with Telegram.")
+            print("Please install telepot before using radiodiodibot.")
             sys.exit(1)
 
     def run_uptime(self, port):
@@ -82,26 +80,18 @@ class BotLauncher(object):
         print("=== Radiodiodibot ===")
         print("Press CTRL-C to exit.")
         # Get default parameter values from the config file
-        telegram_bot_token = self.config["GENERAL"]["TelegramBotToken"]
-        shoutbox_api_url = self.config["GENERAL"]["ShoutboxApiUrl"]
-        telegram_chat_id = self.config["GENERAL"]["TelegramChatID"]
-        api_call_interval = int(self.config["GENERAL"]["ApiCallInterval"])
-        api_auth_token = self.config["GENERAL"]["ApiAuthToken"]
-        uptime_port = self.config["UPTIME"]["Port"]
-
-        # If the user has specified the parameters as command line
-        # arguments, use them to override the config values
-        if self.args.token is not None:
-            telegram_bot_token = self.args.token
-
-        if self.args.shoutbox_api_url is not None:
-            shoutbox_api_url = self.args.shoutbox_api_url
-
-        if self.args.telegram_chat_id is not None:
-            telegram_chat_id = self.args.telegram_chat_id
-
-        if self.args.interval is not None:
-            api_call_interval = self.args.interval
+        try:
+            telegram_bot_token = self.config["GENERAL"]["TelegramBotToken"]
+            shoutbox_api_url = self.config["GENERAL"]["ShoutboxApiUrl"]
+            telegram_chat_id = self.config["GENERAL"]["TelegramChatID"]
+            api_call_interval = int(self.config["GENERAL"]["ApiCallInterval"])
+            api_auth_token = self.config["GENERAL"]["ApiAuthToken"]
+            uptime_port = self.config["UPTIME"]["Port"]
+        except:
+            logging.fatal("Config file '{}' is malformed. Please reconfigure radiodiodibot.".format(
+                BotLauncher.CONFIG_FILE
+            ))
+            sys.exit(1)
 
         # Store the final values in a manager instance
         manager = botmanager.BotManager(telegram_bot_token)
@@ -117,9 +107,11 @@ class BotLauncher(object):
 
         # Start listening
         manager.start()
+        sys.exit(0)
 
     def launch(self):
         self.main()
+
 
 def main():
     l = BotLauncher()
