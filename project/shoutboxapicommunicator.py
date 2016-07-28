@@ -48,8 +48,8 @@ class ShoutboxCommunicator(BaseCommunicator):
     @staticmethod
     def send(data):
         """Send a message to the API"""
-        post_params = "?user={}&text={}&id={}&ip={}&timestamp={}&api_token={}".format(
-            data["user"], data["text"], data["id"], data["ip"], data["timestamp"],
+        post_params = "?user={}&text={}&ip={}&timestamp={}&api_token={}".format(
+            data["user"], data["text"], data["ip"], data["timestamp"],
             ShoutboxCommunicator.token
         )
 

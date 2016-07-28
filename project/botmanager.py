@@ -27,7 +27,6 @@ class BotManager(object):
         If not possible, crash gracefully
         """
         TelegramCommunicator.token = token
-        self.running_message_id = 1
         try:
             logging.info("Creating bot listener with token {}...".format(token))
             TelegramCommunicator.spawn_bot(token)
@@ -101,11 +100,9 @@ class BotManager(object):
         message = {
             "user": user_name,
             "text": text,
-            "id": self.running_message_id,
             "ip": "null",
             "timestamp": date
         }
-        self.running_message_id += 1
         ShoutboxCommunicator.send(message)
 
     def handle(self, msg):
