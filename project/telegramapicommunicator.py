@@ -27,7 +27,10 @@ class TelegramCommunicator(BaseCommunicator):
         TelegramCommunicator.send_raw("{}: {}".format(data["user"], data["text"]))
 
     @staticmethod
-    def send_raw(message):
+    def send_raw(message, chat_id=None):
+        if chat_id is None:
+            chat_id = TelegramCommunicator.chat_id
+
         try:
             TelegramCommunicator.bot.sendMessage(TelegramCommunicator.chat_id,
                                                  message)

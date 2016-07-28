@@ -71,23 +71,16 @@ class BotManager(object):
 
     songs = ["Ace of Spades", "Mökkitie", "Alpha Russian XXL Night Mixtape", "teekkarihymni"]
 
-    def action_now_playing(self, msg):
-        """Placeholder action for testing commands"""
-        TelegramCommunicator.send_raw("Radiossa soi {}!".format(random.choice(BotManager.songs)))
-
     def action_not_supported(self, msg):
         """Notify the user that the given command is not supported"""
-        TelegramCommunicator.send_raw("Tätä toimintoa ei ole tuettu.")
+        chat_id = msg["chat"]
+        TelegramCommunicator.send_raw("Tätä toimintoa ei ole tuettu.", chat_id)
 
     def parse_message(self, msg):
         """Determine which action to take for an incoming Telegram text message"""
         t = msg["text"]
         content_type, chat_type, chat_id = telepot.glance(msg)
-        if "/nowplaying" in t:
-            self.action_now_playing(msg)
-        elif "/start" in t:
-            self.action_not_supported(msg)
-        elif "/stop" in t:
+        if t in ("/start", "/stop"):
             self.action_not_supported(msg)
         elif str(chat_id) == TelegramCommunicator.chat_id.strip():
             self.action_send_to_shoutbox(msg)
