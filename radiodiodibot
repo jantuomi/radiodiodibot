@@ -10,112 +10,120 @@ import os
 from project import botmanager
 from project import uptimeservice
 
+class BotLauncher(object):
+    CONFIG_FILE = "bot.config"
 
-def sigint_handler(signal, frame):
-    """Exit gracefully when receiving an interrupt signal"""
-    logging.info("Stopping uptime services (if any)...")
-    uptimeservice.UptimeService.stop_services()
-    print("Exiting radiodiodibot...")
-    sys.exit(0)
+    @staticmethod
+    def sigint_handler(signal, frame):
+        """Exit gracefully when receiving an interrupt signal"""
+        logging.info("Stopping uptime services (if any)...")
+        uptimeservice.UptimeService.stop_services()
+        print("Exiting radiodiodibot...")
+        sys.exit(0)
 
-signal.signal(signal.SIGINT, sigint_handler)
+    def __init__(self):
+        signal.signal(signal.SIGINT, BotLauncher.sigint_handler)
 
-try:  # Python 2.7+
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
+        try:  # Python 2.7+
+            from logging import NullHandler
+        except ImportError:
+            class NullHandler(logging.Handler):
+                def emit(self, record):
+                    pass
 
+        # Read configs, unsuccessful reads are
+        # silently ignored
+        self.config = configparser.ConfigParser()
+        self.config.read(BotLauncher.CONFIG_FILE)
 
-# Read configs, unsuccessful reads are
-# silently ignored
-CONFIG_FILE = "bot.config"
-config = configparser.ConfigParser()
-config.read(CONFIG_FILE)
+        # Get the bot token as an argument from the user
+        parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
+        parser.add_argument("-t", "--token", help="Telegram Bot API token")
+        parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
+        parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
+        parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+        parser.add_argument("-i", "--interval", help="Delay between API update calls in seconds", type=int)
+        self.args = parser.parse_args()
 
-# Get the bot token as an argument from the user
-parser = argparse.ArgumentParser(description="Telegram bot for the Radiodiodi Student Radio broadcast.")
-parser.add_argument("-t", "--token", help="Telegram Bot API token")
-parser.add_argument("-U", "--shoutbox-api-url", help="Shoutbox API URL")
-parser.add_argument("-C", "--telegram-chat-id", help="Telegram Chat ID")
-parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
-parser.add_argument("-i", "--interval", help="Delay between API update calls in seconds", type=int)
-args = parser.parse_args()
+        # Show verbose output with the -v option
+        if self.args.verbose:
+            logging_level = logging.INFO
+        else:
+            logging_level = logging.WARNING
 
-# Show verbose output with the -v option
-if args.verbose:
-    logging_level = logging.INFO
-else:
-    logging_level = logging.WARNING
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+        logging.getLogger().addHandler(NullHandler())
+        fileLogger = logging.FileHandler("output.log")
+        fileLogger.setFormatter(formatter)
 
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-logging.getLogger().addHandler(NullHandler())
-fileLogger = logging.FileHandler("output.log")
-fileLogger.setFormatter(formatter)
+        consoleLogger = logging.StreamHandler()
+        consoleLogger.setFormatter(formatter)
 
-consoleLogger = logging.StreamHandler()
-consoleLogger.setFormatter(formatter)
+        logging.getLogger().addHandler(fileLogger)
+        logging.getLogger().addHandler(consoleLogger)
+        logging.getLogger().setLevel(logging_level)
 
-logging.getLogger().addHandler(fileLogger)
-logging.getLogger().addHandler(consoleLogger)
-logging.getLogger().setLevel(logging_level)
+        # Try to import telepot
+        # If not installed, inform user and fail gracefully
+        try:
+            import telepot
+        except:
+            print("src needs the telepot module to communicate with Telegram.")
+            print("Please install telepot before using src.")
+            sys.exit(1)
 
-# Try to import telepot
-# If not installed, inform user and fail gracefully
-try:
-    import telepot
-except:
-    print("src needs the telepot module to communicate with Telegram.")
-    print("Please install telepot before using src.")
-    sys.exit(1)
+    def run_uptime(self, port):
+        logging.info("Setting up uptime service...")
+        self.uptime_server = uptimeservice.UptimeService(int(port))
+        self.uptime_server.start()
 
-def run_uptime(port):
-    logging.info("Setting up uptime service...")
-    uptime_server = uptimeservice.UptimeService(int(port))
-    uptime_server.start()
+    # Entry point
+    def main(self):
+        print("=== Radiodiodibot ===")
+        print("Press CTRL-C to exit.")
+        # Get default parameter values from the config file
+        telegram_bot_token = self.config["GENERAL"]["TelegramBotToken"]
+        shoutbox_api_url = self.config["GENERAL"]["ShoutboxApiUrl"]
+        telegram_chat_id = self.config["GENERAL"]["TelegramChatID"]
+        api_call_interval = int(self.config["GENERAL"]["ApiCallInterval"])
+        api_auth_token = self.config["GENERAL"]["ApiAuthToken"]
+        uptime_port = self.config["UPTIME"]["Port"]
 
-# Entry point
+        # If the user has specified the parameters as command line
+        # arguments, use them to override the config values
+        if self.args.token is not None:
+            telegram_bot_token = self.args.token
+
+        if self.args.shoutbox_api_url is not None:
+            shoutbox_api_url = self.args.shoutbox_api_url
+
+        if self.args.telegram_chat_id is not None:
+            telegram_chat_id = self.args.telegram_chat_id
+
+        if self.args.interval is not None:
+            api_call_interval = self.args.interval
+
+        # Store the final values in a manager instance
+        manager = botmanager.BotManager(telegram_bot_token)
+        manager.set_parameters(shoutbox_api_url, telegram_chat_id, api_call_interval, api_auth_token)
+
+        logging.info("Using Shoutbox API URL: {}".format(shoutbox_api_url))
+        logging.info("Using Telegram Chat ID: {}".format(telegram_chat_id))
+        logging.info("Using API call interval of {} seconds.".format(api_call_interval))
+
+        # Start uptime server if user has provided a port to bind
+        if uptime_port is not None:
+            self.run_uptime(uptime_port)
+
+        # Start listening
+        manager.start()
+
+    def launch(self):
+        self.main()
+
 def main():
-    print("=== Radiodiodibot ===")
-    print("Press CTRL-C to exit.")
-    # Get default parameter values from the config file
-    telegram_bot_token = config["GENERAL"]["TelegramBotToken"]
-    shoutbox_api_url = config["GENERAL"]["ShoutboxApiUrl"]
-    telegram_chat_id = config["GENERAL"]["TelegramChatID"]
-    api_call_interval = int(config["GENERAL"]["ApiCallInterval"])
-    api_auth_token = config["GENERAL"]["ApiAuthToken"]
-    uptime_port = config["UPTIME"]["Port"]
-
-    # If the user has specified the parameters as command line
-    # arguments, use them to override the config values
-    if args.token is not None:
-        telegram_bot_token = args.token
-
-    if args.shoutbox_api_url is not None:
-        shoutbox_api_url = args.shoutbox_api_url
-
-    if args.telegram_chat_id is not None:
-        telegram_chat_id = args.telegram_chat_id
-
-    if args.interval is not None:
-        api_call_interval = args.interval
-
-    # Store the final values in a manager instance
-    manager = botmanager.BotManager(telegram_bot_token)
-    manager.set_parameters(shoutbox_api_url, telegram_chat_id, api_call_interval, api_auth_token)
-
-    logging.info("Using Shoutbox API URL: {}".format(shoutbox_api_url))
-    logging.info("Using Telegram Chat ID: {}".format(telegram_chat_id))
-    logging.info("Using API call interval of {} seconds.".format(api_call_interval))
-
-    # Start uptime server if user has provided a port to bind
-    if uptime_port is not None:
-        run_uptime(uptime_port)
-
-    # Start listening
-    manager.start()
-
+    l = BotLauncher()
+    l.launch()
 
 if __name__ == "__main__":
     main()
