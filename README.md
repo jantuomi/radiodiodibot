@@ -8,24 +8,33 @@ A Telegram bot to forward messages in a specified Telegram channel to a shoutbox
 * telepot
 
 ### Installation
-Radiodiodibot is built on Python 3. You can run the bot in two ways:
+1) _radiodiodibot_ is built on Python 3. You can install the dependencies using pip:  
+```
+$ pip install -r requirements.txt
+```
 
-1) Configure `bot.config` like so:
+2) Configure `bot.config` like so:
 ```
 [GENERAL]
 TelegramBotToken=<YOUR_BOT_TOKEN>
 ShoutboxApiUrl=<YOUR_API_URL>
 TelegramChatID=<TELEGRAM_CHAT_ID>
 ApiCallInterval=<UPDATE_INTERVAL_IN_SECONDS>
-```
-And then just run it like so: `./radiodiodibot` or `python radiodiodibot`
 
-2) Or just pass the information as command line arguments:
+[UPTIME]
+Port=<UPTIME_SERVICE_PORT>
 ```
-./radiodiodibot -t <YOUR_BOT_TOKEN> -C <TELEGRAM_CHAT_ID> -U <YOUR_API_URL> -i <UPDATE_INTERVAL_IN_SECONDS>
-```
+
+3) Done!
+
+### Usage  
+Run _radiodiodibot_ like so:  
+`./radiodiodibot` or `python radiodiodibot`  
+Use the _-v_ flag for verbose output.
+_radiodiodibot_ logs all its output both to the console and the file _output.log_.
+
 ### Specification
-Radiodiodibot communicates with the shoutbox with the following json format:
+_radiodiodibot_ communicates with the shoutbox with the following json format:
 ```
 [
   {
