@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote
 import logging
 
 import requests
@@ -48,14 +49,19 @@ class ShoutboxCommunicator(BaseCommunicator):
     @staticmethod
     def send(data):
         """Send a message to the API"""
-        post_params = "?user={}&text={}&ip={}&timestamp={}&api_token={}".format(
-            data["user"], data["text"], data["ip"], data["timestamp"],
-            ShoutboxCommunicator.token
-        )
+        fields = ("user", "text", "ip", "timestamp", "api_token")
+        post_params = "?"
+        for field in fields:
+            if field != fields[-1]:
+                post_params = "{}{}={}".format(post_params, field, quote(str(data[field]).encode("utf-8")))
+                post_params += "&"
+            else:
+                post_params = "{}{}={}".format(post_params, field, ShoutboxCommunicator.token)
 
+        url = ShoutboxCommunicator.post_url() + post_params
         try:
-            requests.post(ShoutboxCommunicator.post_url() + post_params, "")
+            requests.post(url, "")
             user = data["user"]
-            logging.info("Sent message from {} to shoutbox.".format(user))
+            logging.info("Sent message from {} to shoutbox, with url:\n{}".format(user, url))
         except:
             logging.warning("Failed to send message to shoutbox API!")
