@@ -104,6 +104,7 @@ class BotManager(object):
             "timestamp": date
         }
         ShoutboxCommunicator.send(message)
+        logging.info("Message info: user: {}, message: '{}'".format(user_name, text))
 
     def handle(self, msg):
         """Start parsing the incoming message if it is a text message"""
