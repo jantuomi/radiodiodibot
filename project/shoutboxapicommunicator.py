@@ -16,7 +16,7 @@ class ShoutboxCommunicator(BaseCommunicator):
 
     @staticmethod
     def get_url():
-        return "{}/api/last?seconds={}".format(ShoutboxCommunicator.url, ShoutboxCommunicator.interval)
+        return "{}/api/last?seconds={}&telegram=false".format(ShoutboxCommunicator.url, ShoutboxCommunicator.interval)
 
     @staticmethod
     def post_url():
