@@ -46,7 +46,8 @@ class ShoutboxCommunicator(BaseCommunicator):
 
         if len(content) > 0:
             logging.info("Messages from shoutbox:")
-            for msg in content:
+            sorted_content = sorted(content, key=lambda k: k["id"])
+            for msg in sorted_content:
                 logging.info("{}: {}, id: {}".format(msg["user"], msg["text"], msg["id"]))
                 
                 id_dec = int(msg["id"], 16)
