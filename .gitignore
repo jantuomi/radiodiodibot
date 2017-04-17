@@ -93,3 +93,5 @@ ENV/
 
 .gitignore
 \.idea/
+
+bot\.largest_id

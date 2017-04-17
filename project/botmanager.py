@@ -45,6 +45,8 @@ class BotManager(object):
 
     def start(self):
         """Try fetching bot information from Telegram to check connection"""
+        ShoutboxCommunicator.load_largest_id()
+
         TelegramCommunicator.start_listening(self.handle)
 
         while True:

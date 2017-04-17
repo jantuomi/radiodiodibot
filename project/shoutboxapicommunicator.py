@@ -6,6 +6,7 @@ import requests
 
 from project.basecommunicator import BaseCommunicator
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 class ShoutboxCommunicator(BaseCommunicator):
     """Class for communication with the shoutbox API"""
@@ -14,12 +15,13 @@ class ShoutboxCommunicator(BaseCommunicator):
     interval = 30
     message_limit_seconds = 50
     largest_id = 0
+    largest_id_file = "bot.largest_id"
     token = ""
 
     @staticmethod
     def get_url():
         id_hex = "{0:0{1}x}".format(ShoutboxCommunicator.largest_id, 24)
-        return "{}/api/last?&telegram=false&id={}".format(ShoutboxCommunicator.url, ShoutboxCommunicator.message_limit_seconds, id_hex)
+        return "{}/api/last?&telegram=false&id={}".format(ShoutboxCommunicator.url, id_hex)
 
     @staticmethod
     def post_url():
@@ -30,18 +32,16 @@ class ShoutboxCommunicator(BaseCommunicator):
         """Get and return a list of new messages from the API"""
         try:
             r = requests.get(ShoutboxCommunicator.get_url())
-            #logging.info("Response from API OK.")
 
         except:
             logging.warning("Failed to get response from API! ({})".format(ShoutboxCommunicator.get_url()))
             return
 
         try:
-            logging.info("url: {}".format(ShoutboxCommunicator.get_url()))
             content = json.loads(r.text)
-            logging.info(content)
         except:
             logging.warning("Could not parse JSON from request!")
+            logging.warning("Request data:\n{}".format(r))
             return
 
         if len(content) > 0:
@@ -51,8 +51,8 @@ class ShoutboxCommunicator(BaseCommunicator):
                 logging.info("{}: {}, id: {}".format(msg["user"], msg["text"], msg["id"]))
                 
                 id_dec = int(msg["id"], 16)
-                if id_dec > largest_id:
-                    largest_id = id_dec
+                if id_dec > ShoutboxCommunicator.largest_id:
+                    ShoutboxCommunicator.largest_id = id_dec
 
         return content
 
@@ -76,3 +76,21 @@ class ShoutboxCommunicator(BaseCommunicator):
             logging.info("Sent message from {} to shoutbox, with url:\n{}".format(user, url))
         except:
             logging.warning("Failed to send message to shoutbox API!")
+
+    @staticmethod
+    def load_largest_id():
+        try:
+            with open(ShoutboxCommunicator.largest_id_file, 'r') as id_file:
+                ShoutboxCommunicator.largest_id = int(id_file.read())
+            logging.info("Loaded minimum shoutbox message id: {}".format(ShoutboxCommunicator.largest_id))
+        except:
+            logging.warning("Failed to load minimum shoutbox message id! Defaulting to 0.")
+
+    @staticmethod
+    def save_largest_id():
+        try:
+            with open(ShoutboxCommunicator.largest_id_file, 'w') as id_file:
+                id_file.write("{}".format(ShoutboxCommunicator.largest_id))
+            logging.info("Wrote minimum shoutbox id '{}' to file.".format(ShoutboxCommunicator.largest_id))
+        except:
+            logging.warning("Failed to write minimum shoutbox id to file!")

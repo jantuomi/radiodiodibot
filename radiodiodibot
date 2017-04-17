@@ -9,6 +9,7 @@ import os
 
 from project import botmanager
 from project import uptimeservice
+from project import shoutboxapicommunicator
 
 class BotLauncher(object):
     CONFIG_FILE = "bot.config"
@@ -18,6 +19,7 @@ class BotLauncher(object):
         """Exit gracefully when receiving an interrupt signal"""
         logging.info("Stopping uptime services (if any)...")
         uptimeservice.UptimeService.stop_services()
+        shoutboxapicommunicator.ShoutboxCommunicator.save_largest_id()
         print("Exiting radiodiodibot...")
         sys.exit(0)
 
