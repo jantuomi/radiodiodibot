@@ -18,7 +18,8 @@ class ShoutboxCommunicator(BaseCommunicator):
 
     @staticmethod
     def get_url():
-        return "{}/api/last?&telegram=false&id={}".format(ShoutboxCommunicator.url, ShoutboxCommunicator.message_limit_seconds, ShoutboxCommunicator.largest_id)
+        id_hex = "{0:0{1}x}".format(ShoutboxCommunicator.largest_id, 24)
+        return "{}/api/last?&telegram=false&id={}".format(ShoutboxCommunicator.url, ShoutboxCommunicator.message_limit_seconds, id_hex)
 
     @staticmethod
     def post_url():
